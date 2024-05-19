@@ -131,6 +131,8 @@ class Polyedr:
 
         # списки вершин, рёбер и граней полиэдра
         self.vertexes, self.edges, self.facets = [], [], []
+        self.no_changed_vertexes, self.no_changed_edges, \
+            self.no_changed_facets = [], [], []
         self.area = 0.0
 
         # список строк файла
@@ -149,6 +151,7 @@ class Polyedr:
                 elif i < nv + 2:
                     # задание всех вершин полиэдра
                     x, y, z = (float(x) for x in line.split())
+                    self.no_changed_vertexes.append(R3(x, y, z))
                     self.vertexes.append(R3(x, y, z).rz(
                         alpha).ry(beta).rz(gamma) * c)
                 else:
@@ -158,11 +161,17 @@ class Polyedr:
                     size = int(buf.pop(0))
                     # массив вершин этой грани
                     vertexes = list(self.vertexes[int(n) - 1] for n in buf)
+                    no_changed_vertexes = list(
+                        self.no_changed_vertexes[int(n) - 1] for n in buf)
                     # задание рёбер грани
                     for n in range(size):
                         self.edges.append(Edge(vertexes[n - 1], vertexes[n]))
+                        self.no_changed_edges.append(Edge(
+                            no_changed_vertexes[n - 1],
+                            no_changed_vertexes[n]))
                     # задание самой грани
                     self.facets.append(Facet(vertexes))
+                    self.no_changed_facets.append(Facet(no_changed_vertexes))
 
     # Нахождение «просветов»
     def shadow(self):  # pragma: no cover
@@ -180,7 +189,7 @@ class Polyedr:
                 tk.draw_line(e.r3(s.beg), e.r3(s.fin))
 
     def count_area(self):
-        for facet in self.facets:
+        for facet in self.no_changed_facets:
             count_of_good_points = 0
 
             for vertex in facet.vertexes:
